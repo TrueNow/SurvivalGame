@@ -2,52 +2,143 @@ import random
 
 import pygame
 from DATA.DATA import DATA
-from src.Hero import Hero_Sprite
-from src.Items import Potion_Sprite, Weapon_Sprite, Enemy_Sprite
+from src.Hero import Hero
+from src.Items import Potion, Weapon, Enemy
 
-SCORE = 0
 HEALTH = 0
+ATTACK = 0
+SCORE = 0
+KILLS = 0
 
 
-class Health(pygame.sprite.Sprite):
-    """to keep track of the health."""
+class HeroSprite(pygame.sprite.Sprite):
+    def __init__(self, screen_size, filename):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(f'GUI/{filename}').convert_alpha()
+        self.rect = self.image.get_rect(x=screen_size[0], y=screen_size[1])
 
+        self.hero = Hero(**{'name': 'Герой', 'health': 10})
+
+    def identify_item(self, item):
+        if isinstance(item, PotionGroup):
+            score = 0
+            self.hero.take_potion(item.potion)
+        elif isinstance(item, WeaponGroup):
+            score = 0
+            self.hero.take_weapon(item.weapon)
+        elif isinstance(item, EnemyGroup):
+            score = item.enemy.health
+            if self.hero.attack_enemy(item.enemy):
+                self.hero.money += score
+        else:
+            print('Неопознанный предмет')
+            score = 0
+        return score
+
+
+class StringSprite(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(None, 50)
         self.color = [255, 255, 255]
-        self.last_score = -1
+
+
+class HealthSprite(StringSprite):
+    """to keep track of the health."""
+
+    def __init__(self):
+        StringSprite.__init__(self)
         self.update()
         self.rect = self.image.get_rect().move(100, 500)
 
     def update(self):
         """We only update the score in update() when it has changed."""
-        if HEALTH != self.last_score:
-            self.last_score = HEALTH
-            msg = f"Health: {HEALTH}"
-            self.image = self.font.render(msg, False, self.color)
+        msg = f'{HEALTH} HP'
+        self.image = self.font.render(msg, False, self.color)
 
 
-class Score(pygame.sprite.Sprite):
+class AttackSprite(StringSprite):
+    def __init__(self):
+        StringSprite.__init__(self)
+        self.update()
+        self.rect = self.image.get_rect().move(175, 500)
+
+    def update(self) -> None:
+        msg = f'+ {ATTACK}'
+        self.image = self.font.render(msg, False, self.color)
+
+
+class ScoreSprite(StringSprite):
     """to keep track of the score."""
 
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
-        self.font = pygame.font.Font(None, 50)
-        self.color = [255, 255, 255]
-        self.last_score = -1
+        StringSprite.__init__(self)
         self.update()
-        self.rect = self.image.get_rect().move(200, 50)
+        self.rect = self.image.get_rect().move(50, 80)
 
     def update(self):
         """We only update the score in update() when it has changed."""
-        if SCORE != self.last_score:
-            self.last_score = SCORE
-            msg = f"Score: {SCORE}"
-            self.image = self.font.render(msg, False, self.color)
+        msg = f'{SCORE} очков'
+        self.image = self.font.render(msg, False, self.color)
 
 
-class Workspace(pygame.sprite.Sprite):
+class KillsSprite(StringSprite):
+    def __init__(self):
+        StringSprite.__init__(self)
+        self.update()
+        self.rect = self.image.get_rect().move(50, 40)
+
+    def update(self) -> None:
+        msg = f'{KILLS} убийств'
+        self.image = self.font.render(msg, False, self.color)
+
+
+class PotionGroup(pygame.sprite.Group):
+    def __init__(self, name, value, type, image, screen_size):
+        pygame.sprite.Group.__init__(self)
+        self.potion = Potion(name, value)
+
+        self.image_sprite = StringSprite()
+        self.image_sprite.image = pygame.image.load(f'GUI/{image}').convert_alpha()
+        self.image_sprite.rect = self.image_sprite.image.get_rect(x=screen_size[0], y=screen_size[1])
+
+        self.string_sprite = StringSprite()
+        msg = f'{self.potion.health}'
+        self.string_sprite.image = self.string_sprite.font.render(msg, False, [0, 0, 0])
+        self.string_sprite.rect = self.image_sprite.rect
+
+
+class WeaponGroup(pygame.sprite.Group):
+    def __init__(self, name, value, type, image, screen_size):
+        pygame.sprite.Group.__init__(self)
+        self.weapon = Weapon(name, value)
+
+        self.image_sprite = StringSprite()
+        self.image_sprite.image = pygame.image.load(f'GUI/{image}').convert_alpha()
+        self.image_sprite.rect = self.image_sprite.image.get_rect(x=screen_size[0], y=screen_size[1])
+
+        self.string_sprite = StringSprite()
+        msg = f'{self.weapon.attack}'
+        self.string_sprite.image = self.string_sprite.font.render(msg, False, [0, 0, 0])
+        self.string_sprite.rect = self.image_sprite.rect
+
+
+class EnemyGroup(pygame.sprite.Group):
+    def __init__(self, name, value, type, image, screen_size):
+        pygame.sprite.Group.__init__(self)
+        self.enemy = Enemy(name, value)
+
+        self.image_sprite = StringSprite()
+        self.image_sprite.image = pygame.image.load(f'GUI/{image}').convert_alpha()
+        self.image_sprite.rect = self.image_sprite.image.get_rect(x=screen_size[0], y=screen_size[1])
+
+        self.string_sprite = StringSprite()
+        msg = f'{self.enemy.health}'
+        self.string_sprite.image = self.string_sprite.font.render(msg, False, [0, 0, 0])
+        self.string_sprite.rect = self.image_sprite.rect
+
+
+class WorkspaceSprite(pygame.sprite.Sprite):
     def __init__(self, screen_size, filename):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(filename).convert_alpha()
@@ -59,16 +150,18 @@ def random_item(row, col):
     item['screen_size'] = (row, col)
     item_type = item['type']
     if item_type == 'potion':
-        return Potion_Sprite(**item)
+        return PotionGroup(**item)
     elif item_type == 'weapon':
-        return Weapon_Sprite(**item)
+        return WeaponGroup(**item)
     elif item_type == 'enemy':
-        return Enemy_Sprite(**item)
+        return EnemyGroup(**item)
 
 
 def main():
-    global SCORE
     global HEALTH
+    global ATTACK
+    global SCORE
+    global KILLS
 
     pygame.init()
 
@@ -79,28 +172,22 @@ def main():
     field_x, field_y = (width - STEP * 3) // 2, (height - STEP * 3) // 2
 
     work_screen = pygame.Rect(field_x, field_y, STEP * 3, STEP * 3)
-    workspace = Workspace(work_screen, 'GUI/img/background.png')
-
-    all = pygame.sprite.RenderUpdates()
-    Hero_Sprite.containers = all
+    workspace = WorkspaceSprite(work_screen, 'GUI/img/background.png')
 
     box = {}
-    print(field_x, width - field_x, STEP)
     for row in range(field_x, width - field_x - 1, STEP):
         box[row] = {}
         for col in range(field_y, height - field_y - 1, STEP):
             box[row][col] = random_item(row, col)
 
-    box[field_x][field_y] = Hero_Sprite((field_x, field_y), 'img/hero.png')
-    hero = box[field_x][field_y]
+    hero_sprite = box[field_x][field_y] = HeroSprite((field_x, field_y), 'img/hero.png')
+    HEALTH = hero_sprite.hero.health
 
-    if pygame.font:
-        all.add(Score())
-        all.add(Health())
-
-    while hero.hero.is_alive():
-        score = Score()
-        health = Health()
+    while hero_sprite.hero.is_alive():
+        score = ScoreSprite()
+        health = HealthSprite()
+        kills = KillsSprite()
+        attack = AttackSprite()
 
         health.rect.x = field_x
 
@@ -108,36 +195,45 @@ def main():
             if event.type == pygame.QUIT:
                 return
             elif event.type == pygame.KEYDOWN:
-                last_pos = hero.rect.x, hero.rect.y
+                last_pos = hero_sprite.rect.x, hero_sprite.rect.y
                 if event.key == pygame.K_LEFT:
-                    if hero.rect.x - STEP >= 0 + field_x:
-                        hero.rect.x -= STEP
+                    if hero_sprite.rect.x - STEP >= 0 + field_x:
+                        hero_sprite.rect.x -= STEP
                 elif event.key == pygame.K_RIGHT:
-                    if hero.rect.x + STEP < width - field_x - 1:
-                        hero.rect.x += STEP
+                    if hero_sprite.rect.x + STEP < width - field_x - 1:
+                        hero_sprite.rect.x += STEP
                 elif event.key == pygame.K_UP:
-                    if hero.rect.y - STEP >= 0 + field_y:
-                        hero.rect.y -= STEP
+                    if hero_sprite.rect.y - STEP >= 0 + field_y:
+                        hero_sprite.rect.y -= STEP
                 elif event.key == pygame.K_DOWN:
-                    if hero.rect.y + STEP < height - field_y - 1:
-                        hero.rect.y += STEP
+                    if hero_sprite.rect.y + STEP < height - field_y - 1:
+                        hero_sprite.rect.y += STEP
 
-                if last_pos[0] != hero.rect.x or last_pos[1] != hero.rect.y:
-                    SCORE += hero.identify_item(box[hero.rect.x][hero.rect.y])
-                    HEALTH = hero.hero.health
-                    box[hero.rect.x][hero.rect.y] = hero
+                if last_pos[0] != hero_sprite.rect.x or last_pos[1] != hero_sprite.rect.y:
+                    SCORE += hero_sprite.identify_item(box[hero_sprite.rect.x][hero_sprite.rect.y])
+                    HEALTH = hero_sprite.hero.health
+                    KILLS = hero_sprite.hero.kills
+                    ATTACK = hero_sprite.hero.attack
+                    box[hero_sprite.rect.x][hero_sprite.rect.y] = hero_sprite
                     box[last_pos[0]][last_pos[1]] = random_item(last_pos[0], last_pos[1])
 
         screen.blit(workspace.image, workspace.rect)
-        screen.blit(score.image, score.rect)
         screen.blit(health.image, health.rect)
+        screen.blit(attack.image, attack.rect)
+        screen.blit(score.image, score.rect)
+        screen.blit(kills.image, kills.rect)
+
         for row, cols in box.items():
             for col, value in cols.items():
-                screen.blit(value.image, value.rect)
-        screen.blit(hero.image, hero.rect)
+                if isinstance(value, HeroSprite):
+                    screen.blit(hero_sprite.image, hero_sprite.rect)
+                else:
+                    screen.blit(value.image_sprite.image, value.image_sprite.rect)
+                    screen.blit(value.string_sprite.image, value.string_sprite.rect)
 
         pygame.display.update()
-    print(f'Врагов убито: {hero.hero.kills}, Очков заработано: {hero.hero.money}.')
+
+    print(f'Врагов убито: {hero_sprite.hero.kills}, Очков заработано: {hero_sprite.hero.money}.')
 
 
 if __name__ == "__main__":

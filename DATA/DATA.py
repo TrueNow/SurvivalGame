@@ -5,7 +5,7 @@ DATA = [
     {'name': 'Зверь', 'value': 4, 'type': 'enemy', 'image': 'img/enemy.jpg'},
     {'name': 'Громила', 'value': 5, 'type': 'enemy', 'image': 'img/enemy.jpg'},
 
-    {'name': 'Кинжал', 'value': 4, 'type': 'weapon', 'image': 'img/kinjal.png'},
+    {'name': 'Кинжал', 'value': 4, 'type': 'weapon', 'image': 'img/weapon.png'},
     {'name': 'Фаербол', 'value': 4, 'type': 'weapon', 'image': 'img/weapon.png'},
     {'name': 'Лук', 'value': 5, 'type': 'weapon', 'image': 'img/weapon.png'},
     {'name': 'Посох', 'value': 5, 'type': 'weapon', 'image': 'img/weapon.png'},
