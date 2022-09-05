@@ -1,13 +1,10 @@
-import pygame
-
-
 class Potion:
     def __init__(self, name, value):
         self.name = name
         self.health = value
 
     def __str__(self):
-        return f'{self.name} {self.health}'
+        return f'{self.health}'
 
 
 class Weapon:
@@ -16,7 +13,7 @@ class Weapon:
         self.attack = value
 
     def __str__(self):
-        return f'{self.name} {self.attack}'
+        return f'{self.attack}'
 
     def was_broken(self):
         if self.attack > 0:
@@ -30,7 +27,7 @@ class Enemy:
         self.health = value
 
     def __str__(self):
-        return f'{self.name} {self.health}'
+        return f'{self.health}'
 
     def is_dead(self):
         if self.health > 0:
